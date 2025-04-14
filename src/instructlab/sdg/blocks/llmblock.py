@@ -232,7 +232,9 @@ class LLMBlock(Block):
         return gen_kwargs
 
     def _generate(self, samples) -> list:
+        # print(samples)
         prompts = [self._format_prompt(sample) for sample in samples]
+        # print(prompts)
         logger.debug(f"STARTING GENERATION FOR LLMBlock USING PROMPTS: {prompts}")
         logger.debug(f"Generation arguments: {self.gen_kwargs}")
         if self.server_supports_batched:
@@ -245,6 +247,7 @@ class LLMBlock(Block):
         progress_bar = tqdm(
             range(len(prompts)), desc=f"{self.block_name} Prompt Generation"
         )
+        
         for prompt in prompts:
             logger.debug(f"CREATING COMPLETION FOR PROMPT: {prompt}")
             for _ in range(self.gen_kwargs.get("n", 1)):
@@ -275,7 +278,7 @@ class LLMBlock(Block):
         # validate each sample
         # Log errors and remove invalid samples
         valid_samples = []
-
+        
         for sample in samples:
             if self._validate(self.prompt_template, sample):
                 valid_samples.append(sample)
@@ -285,7 +288,6 @@ class LLMBlock(Block):
                 )  # Log details of the failed sample
 
         samples = valid_samples
-
         if len(samples) == 0:
             return Dataset.from_list([])
 
@@ -302,10 +304,11 @@ class LLMBlock(Block):
         # pair up the inputs and outputs.
         for item in samples:
             extended_samples.extend([item] * num_parallel_samples)
-
+        print(outputs)
         new_data = []
         for sample, output in zip(extended_samples, outputs):
             parsed_outputs = self._parse(output)
+            print(parsed_outputs)
             max_length = max(len(value) for value in parsed_outputs.values())
             for values in zip(*(lst[:max_length] for lst in parsed_outputs.values())):
                 new_data.append({**sample, **dict(zip(parsed_outputs.keys(), values))})
